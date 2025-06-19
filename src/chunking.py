@@ -2,11 +2,8 @@ import os
 import re
 import hashlib
 import argparse
-import torch
 from typing import List
 from tqdm import tqdm
-from transformers import AutoModelForCausalLM, AutoTokenizer
-from transformers.cache_utils import DynamicCache
 
 # LlamaIndex related
 from llama_index.core import (

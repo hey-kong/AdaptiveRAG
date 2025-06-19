@@ -10,7 +10,6 @@ from llama_index.retrievers.bm25 import BM25Retriever
 from llama_index.core.retrievers import QueryFusionRetriever
 import Stemmer
 
-from slm_inference import slm
 from customed_statistic import global_statistic
 
 
@@ -78,51 +77,3 @@ class Retriever:
         if len(nodes) == 0:
             exit("No chunk retrieved")
         return nodes
-
-    def dynamic_pruning(self, reranked_nodes, query_text, min_k, max_k):
-        start = time.perf_counter()
-        pruned_pos = self._find_pruned_pos(reranked_nodes, query_text, min_k, max_k)
-        nodes = reranked_nodes[:pruned_pos]
-        global_statistic.add_to_list("pruning_time", time.perf_counter() - start)
-        global_statistic.add_to_list("avg_chunks", len(nodes))
-        return nodes
-
-    # def _find_pruned_pos(self, reranked_nodes, query_text, min_k, step=2):
-    #     n = len(reranked_nodes)
-    #     if n == 0:
-    #         return 0
-    #     if min_k <= 0:
-    #         raise ValueError("min_k must be >= 1")
-    #     if n <= min_k:
-    #         return n
-    #
-    #     i = min_k
-    #     while i < n:
-    #         if not slm.judge_relevance(reranked_nodes[i][0].node, query_text, self.args.use_kvcache):
-    #             break
-    #         i += step
-    #
-    #     start = max(min_k, i - step + 1)
-    #     end = min(i, n)
-    #     for j in range(start, end):
-    #         if not slm.judge_relevance(reranked_nodes[j][0].node, query_text, self.args.use_kvcache):
-    #             return j
-    #     return end
-
-    def _find_pruned_pos(self, reranked_nodes, query_text, min_k, max_k):
-        max_k = min(max_k, len(reranked_nodes))
-        if max_k == 0:
-            return 0
-        if min_k <= 0:
-            raise ValueError("min_k must be >= 1")
-        if max_k <= min_k:
-            return max_k
-
-        i = min_k
-        while i < max_k:
-            preload_node = reranked_nodes[i + 1] if i + 1 < max_k and self.args.preload_kvcache else None
-            if not slm.judge_relevance(reranked_nodes[i], query_text, self.args.use_kvcache, preload_node):
-                break
-            i += 1
-
-        return i
